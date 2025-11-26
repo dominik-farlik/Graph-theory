@@ -1,17 +1,18 @@
 import os
+from pathlib import Path
 
 import numpy as np
 from numpy import ndarray
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MATICE_DIR = os.path.join(BASE_DIR, "matice")
+ROOT_DIR = Path(__file__).resolve().parent.parent
+MATICE_DIR = os.path.join(ROOT_DIR, "matice")
 
 os.makedirs(MATICE_DIR, exist_ok=True)
 
 class ExportMixin:
     def print_matice(self, matice: ndarray, mocnina: int = 1):
         nodes = list(self.nodes.keys())
-        with open(os.path.join(MATICE_DIR, "matice_sousednosti_na_{mocnina}.csv"), "w", encoding="utf-8") as f:
+        with open(os.path.join(MATICE_DIR, f"matice_sousednosti_na_{mocnina}.csv"), "w", encoding="utf-8") as f:
             f.write("Node," + ",".join(nodes) + "\n")
             for i, row in enumerate(matice):
                 f.write(f"{nodes[i]}," + ",".join(str(int(x)) for x in row) + "\n")
@@ -57,11 +58,10 @@ class ExportMixin:
 
     def print_tabulka_incidentnich_hran(self) -> None:
         tab = self.tabulka_incidentnich_hran
-        print("Tabulka incidentních hran:")
-        print("VÝSTUPNÍ HRANY:")
-        for node, edges in tab["vystupni"].items():
-            print(f"  {node}: " + ", ".join(e for e in edges))
-        print("\nVSTUPNÍ HRANY:")
-        for node, edges in tab["vstupni"].items():
-            print(f"  {node}: " + ", ".join(e for e in edges))
-
+        with open(os.path.join(MATICE_DIR, "tabulka_incidentnich_hran.csv"), "w", encoding="utf-8") as file:
+            file.write("VÝSTUPNÍ HRANY:\n")
+            for node, edges in tab["vystupni"].items():
+                file.write(f"{node}," + ",".join(e for e in edges) + "\n")
+            file.write("VSTUPNÍ HRANY:\n")
+            for node, edges in tab["vstupni"].items():
+                file.write(f"{node}," + ",".join(e for e in edges) + "\n")

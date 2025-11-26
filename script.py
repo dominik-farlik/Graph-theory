@@ -1,6 +1,7 @@
 import os
 
 from graph.core import Graph
+from BST.BST import BST, build_bst_from_file
 
 TYPE = 0
 
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     if not os.path.exists("./matice"):
         os.makedirs("./matice")
 
-    G = load_graph_from_file("graphs/kostra.tg")
+    G = load_graph_from_file("graphs/21.tg")
     #G.draw()
     G.print_properties()
 
@@ -52,10 +53,28 @@ if __name__ == "__main__":
     G.print_tabulka_incidentnich_hran()
 
     # seznamy
-    print("seznam sousedu:\n", G.seznam_sousedu)
-    print("seznam uzlu:\n", list(G.nodes.keys()))
-    print("seznam hran:\n" + ", ".join(e.name for e in G.edges))
+    print("seznam sousedu: ", G.seznam_sousedu)
+    print("seznam uzlu: ", list(G.nodes.keys()))
+    print("seznam hran: " + ", ".join(e.name for e in G.edges))
 
     # kostry
-    print("level order:\n", G.level_order)
+    #print("level order: ", G.level_order())
+    #print("pre order: ", G.pre_order())
+    #print("pre order: ", G.pre_order())
+    #print("post order: ", G.post_order())
+    #print("in order(nepozná pravá/levá u jednoho potomka): ", G.in_order())
+    print("Pocet koster: ", G.pocet_koster())
 
+    # prohledavani do sirky a do hloubky
+    print("Do hloubky: ", G.bfs())
+    print("Do sirky: ", G.dfs())
+
+    # BST
+    bst = build_bst_from_file("graphs/bst.txt")
+    print("Root:", bst.root)
+    print("BST:", bst.level_order())
+    bst.delete(53)
+    bst.delete(12)
+    bst.delete(77)
+    print("BST:", bst.level_order())
+    #bst.pretty_print()

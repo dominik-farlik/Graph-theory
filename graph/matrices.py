@@ -102,7 +102,7 @@ class MatrixMixin:
         for e in self.edges:
             u, v = e.node1, e.node2
             i, j = index[u], index[v]
-            w = 1.0 if e.length is None else e.length
+            w = 1.0 if e.length is None else float(e.length)
 
             if not self.orientovany or e.direction == Direction.NONE:
                 if i == j:
