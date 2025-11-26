@@ -173,7 +173,7 @@ class Graph:
 
     def print_matice(self, matice: ndarray, mocnina: int = 1):
         nodes = list(self.nodes.keys())
-        with open(f"matice_sousednosti_na_{mocnina}.csv", "w", encoding="utf-8") as f:
+        with open(f"./matice/matice_sousednosti_na_{mocnina}.csv", "w", encoding="utf-8") as f:
             f.write("Node," + ",".join(nodes) + "\n")
             #print("   " + "  ".join(nodes))
             for i, row in enumerate(matice):
@@ -226,7 +226,7 @@ class Graph:
         colw = max(3, max(len(c) for c in col_names))
         header = "Nodes/Edges," + ",".join(c.rjust(colw) for c in col_names)
 
-        with open("matice_incidence.csv", "w", encoding="utf-8") as f:
+        with open("./matice/matice_incidence.csv", "w", encoding="utf-8") as f:
             f.write(header + "\n")
             #print(header)
             for i, row in enumerate(B):
@@ -261,7 +261,7 @@ class Graph:
 
     def print_znamenkova_matice(self):
         nodes = list(self.nodes.keys())
-        with open("matice_znamenkova.csv", "w", encoding="utf-8") as f:
+        with open("./matice/matice_znamenkova.csv", "w", encoding="utf-8") as f:
             f.write("Node," + ",".join(nodes) + "\n")
             #print("   " + "  ".join(nodes))
             for i, row in enumerate(self.znamenkova_matice):
@@ -277,12 +277,9 @@ class Graph:
         np.fill_diagonal(A, 0.0)
 
         for e in self.edges:
-            if e.length is None:
-                continue
-
             u, v = e.node1, e.node2
             i, j = index[u], index[v]
-            w = float(e.length)
+            w = 1.0 if e.length is None else e.length
 
             if not self.orientovany or e.direction == Direction.NONE:
                 if i == j:
@@ -301,7 +298,7 @@ class Graph:
     def print_matice_delek(self) -> None:
         A = self.matice_delek
         nodes = [n.name for n in self.nodes.values()]
-        with open("matice_delek.csv", "w", encoding="utf-8") as file:
+        with open("./matice/matice_delek.csv", "w", encoding="utf-8") as file:
             file.write("Node," + ",".join(nodes) + "\n")
             #print("   " + "  ".join(nodes))
             for i, row in enumerate(A):
@@ -332,14 +329,12 @@ class Graph:
 
     def print_matice_predchudcu(self) -> None:
         P = self.matice_predchudcu
+
         nodes = [n.name for n in self.nodes.values()]
-        with open("matice_predchudcu.csv", "w", encoding="utf-8") as file:
+        with open("./matice/matice_predchudcu.csv", "w", encoding="utf-8") as file:
             file.write("Node," + ",".join(nodes) + "\n")
-            #print("   " + "  ".join(nodes))
             for i, row in enumerate(P):
-                line = f"{nodes[i]}," + ",".join(x if x is not None else "–" for x in row)
                 file.write(f"{nodes[i]}," + ",".join(x if x is not None else "-" for x in row) + "\n")
-                #print(line)
 
     @property
     def tabulka_incidentnich_hran(self) -> dict[Any, Any]:
@@ -535,7 +530,6 @@ class Graph:
         queue = [root]
         result = []
         while queue:
-            print(queue)
             result.append(queue[0])
             naslednici = self.get_mnozina_nasledniku(queue.pop(0))
             queue.extend(sorted(naslednici))

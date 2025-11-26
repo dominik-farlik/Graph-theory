@@ -1,3 +1,5 @@
+import os
+
 from graph import Graph
 
 TYPE = 0
@@ -20,9 +22,11 @@ def load_graph_from_file(filename: str) -> Graph:
 
 
 if __name__ == "__main__":
-    G = load_graph_from_file("graphs/kostra.tg")
-    #print(G)
-    #G.plot()
+    if not os.path.exists("./matice"):
+        os.makedirs("./matice")
+
+    G = load_graph_from_file("graphs/09.tg")
+    G.plot()
     G.print_properties()
 
     print("Zadej uzel:")
