@@ -26,7 +26,7 @@ if __name__ == "__main__":
     if not os.path.exists("./matice"):
         os.makedirs("./matice")
 
-    G = load_graph_from_file("graphs/21.tg")
+    G = load_graph_from_file("graphs/01.tg")
     #G.draw()
     G.print_properties()
 
@@ -64,10 +64,26 @@ if __name__ == "__main__":
     #print("post order: ", G.post_order())
     #print("in order(nepozná pravá/levá u jednoho potomka): ", G.in_order())
     print("Pocet koster: ", G.pocet_koster())
+    mst = G.minimalni_kostra()
+    print("Minimalni kostra: ", mst)
+    hodnota_kostry = sum((float(e.length) or 1.0) for e in mst)
+    print("Hodnota minimální kostry: ", hodnota_kostry)
+    max_kostra = G.maximalni_kostra()
+    print("Maximální kostra: ", max_kostra)
+    hodnota_max = sum(float(e.length) if e.length is not None else 1.0 for e in max_kostra)
+    print("Hodnota maximální kostry:", hodnota_max)
 
     # prohledavani do sirky a do hloubky
     print("Do hloubky: ", G.bfs())
     print("Do sirky: ", G.dfs())
+
+    # optimalni sledy
+    cesta, delka = G.nejkratsi_cesta("A", "F")
+    if cesta:
+        print("Nejkratší cesta:", " -> ".join(node.name for node in cesta))
+        print("Délka:", delka)
+    else:
+        print("Mezi A a F neexistuje cesta.")
 
     # BST
     bst = build_bst_from_file("graphs/bst.txt")

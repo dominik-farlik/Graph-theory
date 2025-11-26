@@ -2,6 +2,8 @@ from typing import Optional
 
 import numpy as np
 from numpy import ndarray
+from numpy._typing import NDArray
+
 from edge.edge import Direction, Edge
 from node.node import Node
 
@@ -119,22 +121,11 @@ class MatrixMixin:
         return A
 
     @property
+    def matice_nejkratsich_delek(self) -> NDArray[np.float64]:
+        dist, _ = self._floyd_warshall()
+        return dist
+
+    @property
     def matice_predchudcu(self) -> list[list[Optional[str]]]:
-        node_list = list(self.nodes.values())
-        n = len(node_list)
-        dist = self.matice_delek.copy()
-        pred = [[None for _ in range(n)] for _ in range(n)]
-
-        for i, u in enumerate(node_list):
-            for j, v in enumerate(node_list):
-                if i != j and not np.isinf(dist[i, j]):
-                    pred[i][j] = u.name
-
-        for k in range(n):
-            for i in range(n):
-                for j in range(n):
-                    if dist[i, k] + dist[k, j] < dist[i, j]:
-                        dist[i, j] = dist[i, k] + dist[k, j]
-                        pred[i][j] = pred[k][j]
-
+        _, pred = self._floyd_warshall()
         return pred
