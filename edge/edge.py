@@ -1,6 +1,6 @@
 from enum import Enum
 
-from node import Node
+from node.node import Node
 
 
 class Direction(Enum):

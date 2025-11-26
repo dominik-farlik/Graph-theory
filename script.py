@@ -1,6 +1,6 @@
 import os
 
-from graph import Graph
+from graph.core import Graph
 
 TYPE = 0
 
@@ -25,8 +25,8 @@ if __name__ == "__main__":
     if not os.path.exists("./matice"):
         os.makedirs("./matice")
 
-    G = load_graph_from_file("graphs/09.tg")
-    G.plot()
+    G = load_graph_from_file("graphs/kostra.tg")
+    #G.draw()
     G.print_properties()
 
     print("Zadej uzel:")
