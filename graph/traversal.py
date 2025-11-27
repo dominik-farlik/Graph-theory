@@ -1,3 +1,5 @@
+import heapq
+import math
 from collections import deque
 import random
 from typing import List, Optional
@@ -460,3 +462,155 @@ class TraversalMixin:
             return [], float("inf")
 
         return best_path, best_len
+
+    def _sousede_s_pravdepodobnosti(self, node: Node) -> list[tuple[Node, float]]:
+        """
+        Vrátí seznam (soused, p) pro daný uzel, kde p = e.length (pravděpodobnost/bezpečnost).
+        Respektuje orientaci grafu.
+        """
+        result: list[tuple[Node, float]] = []
+
+        for e in self.edges:
+            if e.length is None:
+                p = 1.0
+            else:
+                p = float(e.length)
+
+            if not self.orientovany or e.direction == Direction.NONE:
+                if e.node1 == node:
+                    result.append((e.node2, p))
+                elif e.node2 == node:
+                    result.append((e.node1, p))
+            else:
+                # orientovaný
+                if e.direction == Direction.TO and e.node1 == node:
+                    result.append((e.node2, p))
+                elif e.direction == Direction.FROM and e.node2 == node:
+                    result.append((e.node1, p))
+
+        return result
+
+    def nejbezpecnejsi_cesta(self, start_name: str, end_name: str) -> tuple[List[Node], float]:
+        """
+        Najde NEJBEZPEČNĚJŠÍ cestu mezi dvojicí uzlů.
+        Předpokládá, že e.length je pravděpodobnost / bezpečnost v (0, 1].
+        Používá transformaci: cost = -log(p) a Dijkstrův algoritmus.
+
+        Vrací (seznam uzlů na cestě, celková bezpečnost jako součin pravděpodobností).
+        """
+
+        # jméno -> Node
+        nodes_by_name = {node.name: node for node in self.nodes.values()}
+
+        if start_name not in nodes_by_name or end_name not in nodes_by_name:
+            raise ValueError("Start nebo end uzel v grafu neexistuje.")
+
+        start = nodes_by_name[start_name]
+        end = nodes_by_name[end_name]
+
+        # Dijkstra: dist = součet costů (-log p)
+        dist = {node: float("inf") for node in self.nodes.values()}
+        prev: dict[Node, Node | None] = {node: None for node in self.nodes.values()}
+
+        dist[start] = 0.0
+        pq: list[tuple[float, Node]] = [(0.0, start)]  # (cost, node)
+
+        while pq:
+            cur_cost, u = heapq.heappop(pq)
+
+            if cur_cost > dist[u]:
+                continue  # zastaralý záznam
+
+            if u == end:
+                break  # máme nejlevnější (=nejbezpečnější) cestu do end
+
+            for v, p in self._sousede_s_pravdepodobnosti(u):
+                # hrany s p <= 0 ignorujeme
+                if p <= 0.0:
+                    continue
+
+                edge_cost = -math.log(p)  # transformace x -> -log x
+
+                new_cost = cur_cost + edge_cost
+                if new_cost < dist[v]:
+                    dist[v] = new_cost
+                    prev[v] = u
+                    heapq.heappush(pq, (new_cost, v))
+
+        # žádná cesta
+        if dist[end] == float("inf"):
+            return [], 0.0
+
+        # rekonstrukce cesty
+        path: List[Node] = []
+        cur: Node | None = end
+        while cur is not None:
+            path.append(cur)
+            cur = prev[cur]
+        path.reverse()
+
+        # celková bezpečnost = exp(-celkový_cost)
+        total_safety = math.exp(-dist[end])
+
+        return path, total_safety
+
+    def nejsirsi_cesta(self, start_name: str, end_name: str) -> tuple[list[Node], float]:
+        """
+        Najde NEJŠIRŠÍ (maximum capacity / widest) cestu mezi dvěma uzly.
+        Šířka cesty = maximum přes všechny cesty z minima vah (length) na cestě.
+
+        Vrací (seznam uzlů na cestě, šířka_cesty).
+        """
+
+        # mapování jméno -> Node
+        nodes_by_name = {node.name: node for node in self.nodes.values()}
+
+        if start_name not in nodes_by_name or end_name not in nodes_by_name:
+            raise ValueError("Start nebo end uzel v grafu neexistuje.")
+
+        start = nodes_by_name[start_name]
+        end = nodes_by_name[end_name]
+
+        # nejlepší známá kapacita do každého uzlu
+        best_cap: dict[Node, float] = {node: 0.0 for node in self.nodes.values()}
+        prev: dict[Node, Node | None] = {node: None for node in self.nodes.values()}
+
+        best_cap[start] = float("inf")
+
+        # max-heap -> použijeme záporné kapacity (Python má jen min-heap)
+        pq: list[tuple[float, Node]] = [(-best_cap[start], start)]  # (-kapacita, node)
+
+        while pq:
+            neg_cap_u, u = heapq.heappop(pq)
+            cap_u = -neg_cap_u
+
+            # pokud už máme lepší hodnotu, přeskočíme
+            if cap_u < best_cap[u]:
+                continue
+
+            if u == end:
+                break  # máme nejlepší možnou kapacitu do end
+
+            for v, w in self._sousede_s_vahou(u):
+                # kandidátská kapacita = min(dosavadní, kapacita hrany)
+                cand_cap = min(cap_u, w)
+
+                if cand_cap > best_cap[v]:
+                    best_cap[v] = cand_cap
+                    prev[v] = u
+                    heapq.heappush(pq, (-cand_cap, v))
+
+        # žádná cesta
+        if best_cap[end] == 0.0:
+            return [], 0.0
+
+        # rekonstruovat cestu z prev
+        path: List[Node] = []
+        cur: Node | None = end
+        while cur is not None:
+            path.append(cur)
+            cur = prev[cur]
+        path.reverse()
+
+        width = best_cap[end]
+        return path, width

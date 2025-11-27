@@ -10,7 +10,7 @@ from graph.traversal import TraversalMixin
 from node.node import Node
 from edge.edge import Edge, Direction
 
-
+TYPE = 0
 NODE_NAME = 1
 NODE_1 = 1
 DIRECTION = 2
@@ -66,3 +66,19 @@ class Graph(MatrixMixin, PropertiesMixin, DegreesMixin, SetsMixin, TraversalMixi
             length = line[self.edge_length]
 
         return name, length
+
+def load_graph_from_file(filename: str) -> Graph:
+    g = Graph()
+    with open(filename, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip().rstrip(";")
+            if not line:
+                continue
+
+            line = line.split(" ")
+            if line[TYPE] == "u":
+                g.add_node(line)
+
+            elif line[TYPE] == "h":
+                g.add_edge(line)
+    return g
