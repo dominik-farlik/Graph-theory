@@ -372,18 +372,15 @@ class TraversalMixin:
         D = self.matice_nejkratsich_delek  # POZOR: už ne matice_delek
         P = self.matice_predchudcu
 
-        # neexistuje cesta
         if np.isinf(D[i, j]):
             return [], float('inf')
 
-        # rekonstruuj cestu backtrackingem přes pred
         path_names = [end_name]
         curr_idx = j
 
         while curr_idx != i:
             pred_name = P[i][curr_idx]
             if pred_name is None:
-                # bezpečnostní pojistka – nemělo by nastat, pokud D[i, j] není inf
                 break
             path_names.append(pred_name)
             curr_idx = index_by_name[pred_name]
@@ -393,3 +390,73 @@ class TraversalMixin:
         length = float(D[i, j])
 
         return path_nodes, length
+
+    def _sousede_s_vahou(self, node: Node) -> list[tuple[Node, float]]:
+        """
+        Vrátí seznam (soused, váha_hrany) pro daný uzel.
+        Respektuje orientovanost grafu a Direction.
+        """
+        result: list[tuple[Node, float]] = []
+
+        for e in self.edges:
+            # délka hrany -> váha
+            if e.length is None:
+                w = 1.0
+            else:
+                w = float(e.length)
+
+            if not self.orientovany or e.direction == Direction.NONE:
+                if e.node1 == node:
+                    result.append((e.node2, w))
+                elif e.node2 == node:
+                    result.append((e.node1, w))
+            else:
+                # orientovaný graf
+                if e.direction == Direction.TO and e.node1 == node:
+                    result.append((e.node2, w))
+                elif e.direction == Direction.FROM and e.node2 == node:
+                    result.append((e.node1, w))
+
+        return result
+
+    def nejdelsi_cesta(self, start_name: str, end_name: str) -> tuple[List[Node], float]:
+        """
+        Najde NEJDELŠÍ JEDNODUCHOU cestu (bez opakování uzlů)
+        mezi start_name a end_name pomocí DFS s backtrackingem.
+        """
+
+        nodes_by_name = {node.name: node for node in self.nodes.values()}
+
+        if start_name not in nodes_by_name or end_name not in nodes_by_name:
+            raise ValueError("Start nebo end uzel v grafu neexistuje.")
+
+        start = nodes_by_name[start_name]
+        end = nodes_by_name[end_name]
+
+        best_len = float("-inf")
+        best_path: List[Node] = []
+
+        def dfs(current: Node, current_len: float, path: List[Node]):
+            nonlocal best_len, best_path
+
+            if current == end:
+                if current_len > best_len:
+                    best_len = current_len
+                    best_path = path.copy()
+                return
+
+            for neighbor, w in self._sousede_s_vahou(current):
+                if neighbor in path:
+                    continue
+
+                path.append(neighbor)
+                dfs(neighbor, current_len + w, path)
+                path.pop()
+
+        dfs(start, 0.0, [start])
+
+        if best_len == float("-inf"):
+            # žádná cesta neexistuje
+            return [], float("inf")
+
+        return best_path, best_len

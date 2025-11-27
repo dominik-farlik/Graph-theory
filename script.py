@@ -27,7 +27,7 @@ if __name__ == "__main__":
         os.makedirs("./matice")
 
     G = load_graph_from_file("graphs/01.tg")
-    #G.draw()
+    G.draw()
     G.print_properties()
 
     print("Zadej uzel:")
@@ -84,6 +84,13 @@ if __name__ == "__main__":
         print("Délka:", delka)
     else:
         print("Mezi A a F neexistuje cesta.")
+
+    path, length = G.nejdelsi_cesta("A", "F")
+    if path:
+        print("Nejdelší cesta:", " -> ".join(node.name for node in path))
+        print("Délka:", length)
+    else:
+        print("Mezi A a F neexistuje žádná cesta.")
 
     # BST
     bst = build_bst_from_file("graphs/bst.txt")
