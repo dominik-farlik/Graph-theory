@@ -50,7 +50,7 @@ def print_prohledavani():
     print("Do hloubky: ", G.bfs())
     print("Do sirky: ", G.dfs())
 
-    start, end = "M", "F"
+    start, end = "s", "t"
 
     cesta, delka = G.nejkratsi_cesta(start, end)
     if cesta:
@@ -77,6 +77,8 @@ def print_prohledavani():
     #print("Nejbezpečnější cesta:", " -> ".join(node.name for node in cesta))
     #print("Celková bezpečnost:", bezpecnost)
 
+    print(f"Maximální tok ze {start} do {end}:", G.maximalni_tok(start, end))
+
 def print_bst():
     print("Root:", BST.root)
     print("BST:", BST.level_order())
@@ -90,7 +92,7 @@ if __name__ == "__main__":
     if not os.path.exists("./matice"):
         os.makedirs("./matice")
 
-    G = load_graph_from_file("graphs/22.tg")
+    G = load_graph_from_file("graphs/23.tg")
     #G.draw()
     G.print_properties()
     print_node_properties(G.nodes.get("", None))

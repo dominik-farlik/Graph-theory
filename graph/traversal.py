@@ -1,6 +1,6 @@
 import heapq
 import math
-from collections import deque
+from collections import deque, defaultdict
 import random
 from typing import List, Optional
 
@@ -614,3 +614,110 @@ class TraversalMixin:
 
         width = best_cap[end]
         return path, width
+
+    def maximalni_tok(self, source_name: str, sink_name: str) -> float:
+        """
+        Spočítá maximální tok ze zdroje do stoky v síti.
+        Kapacity hran beru z e.length (None -> 1.0).
+
+        source_name, sink_name = jména uzlů (Node.name).
+        Vrací hodnotu maximálního toku (float).
+        """
+
+        # jméno -> Node
+        nodes_by_name: dict[str, Node] = {node.name: node for node in self.nodes.values()}
+
+        if source_name not in nodes_by_name or sink_name not in nodes_by_name:
+            raise ValueError("Zdroj nebo stoka v grafu neexistuje.")
+
+        source = nodes_by_name[source_name]
+        sink = nodes_by_name[sink_name]
+
+        # ===========================
+        # 1) Kapacitní (reziduální) graf
+        # ===========================
+
+        # cap[u][v] = kapacita hrany u -> v
+        cap: dict[Node, dict[Node, float]] = defaultdict(lambda: defaultdict(float))
+
+        for e in self.edges:
+            # kapacita z length (None -> 1.0)
+            c = 1.0 if e.length is None else float(e.length)
+
+            u = e.node1
+            v = e.node2
+
+            if not self.orientovany or e.direction == Direction.NONE:
+                # neorientovaný / NONE -> kapacita v obou směrech
+                cap[u][v] += c
+                cap[v][u] += c
+            else:
+                # orientovaný graf
+                if e.direction == Direction.TO:
+                    cap[u][v] += c
+                elif e.direction == Direction.FROM:
+                    cap[v][u] += c
+
+        # reziduální kapacity inicializujeme kapacitami
+        residual: dict[Node, dict[Node, float]] = defaultdict(lambda: defaultdict(float))
+        for u, nbrs in cap.items():
+            for v, c in nbrs.items():
+                residual[u][v] = c
+                # pro jistotu existuje i opačný směr v residual (může být 0)
+                if v not in residual or u not in residual[v]:
+                    residual[v][u] = residual[v][u]  # default 0
+
+        # ===========================
+        # 2) Edmonds–Karp (BFS augmentační cesty)
+        # ===========================
+
+        def bfs_find_path() -> tuple[float, dict[Node, Node | None]]:
+            """
+            Najde augmentační cestu v reziduální síti pomocí BFS.
+            Vrací (tok_na_ceste, parent), kde:
+              tok_na_ceste = největší možný další tok po nalezené cestě
+              parent[v] = předchůdce v BFS stromu (pro rekonstrukci cesty)
+            Pokud cesta neexistuje, vrátí (0, parent).
+            """
+            parent: dict[Node, Node | None] = {node: None for node in self.nodes.values()}
+            parent[source] = source  # označíme zdroj
+            # kapacita (možný tok) do daného vrcholu v BFS
+            path_cap: dict[Node, float] = {node: 0.0 for node in self.nodes.values()}
+            path_cap[source] = math.inf
+
+            q = deque([source])
+
+            while q:
+                u = q.popleft()
+
+                for v, rc in residual[u].items():
+                    # potřebujeme kladnou reziduální kapacitu a dosud nenavštíveno
+                    if rc > 1e-12 and parent[v] is None:
+                        parent[v] = u
+                        path_cap[v] = min(path_cap[u], rc)
+                        if v == sink:
+                            # našli jsme cestu do stoky
+                            return path_cap[v], parent
+                        q.append(v)
+
+            return 0.0, parent
+
+        max_flow = 0.0
+
+        while True:
+            flow, parent = bfs_find_path()
+            if flow <= 0.0:
+                break  # žádná další augmentační cesta
+
+            max_flow += flow
+
+            # jdeme zpět ze sink do source a aktualizujeme reziduální kapacity
+            v = sink
+            while v != source:
+                u = parent[v]
+                # parent[source] = source, takže by u nikdy nemělo být None
+                residual[u][v] -= flow
+                residual[v][u] += flow
+                v = u
+
+        return max_flow
